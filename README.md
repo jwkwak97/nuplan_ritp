@@ -1,11 +1,22 @@
-# nuplan_zigned
+# nuplan_zigned (RITP · NVIDIA B200 Adaptation)
+
+> **This repository is a fork of [Zigned/nuplan_zigned](https://github.com/Zigned/nuplan_zigned)**, adapted to run on **NVIDIA B200 GPUs** with an updated software stack (CUDA 12.4, PyTorch 2.5.1). The original code targets older hardware and package versions; this fork applies the following changes:
+>
+> - Upgraded to **Python 3.11**, **CUDA 12.4**, **PyTorch 2.5.1+cu124**
+> - Fixed **pytorch-lightning 1.3.8** API compatibility (`pl.plugins.DDPPlugin` instead of removed `pl.strategies.DDPStrategy`)
+> - Replaced removed `pytorch_lightning.metrics` with `torchmetrics`
+> - Removed `torch.jit._overload` decorators incompatible with newer PyTorch
+> - Fixed `os.getlogin()` crash in container/headless environments
+> - Added nuplan-devkit **editable install** requirement (yaml configs missing from built package)
+> - Updated `requirements.txt` / `requirements_torch.txt` / `setup.py` for current versions
+
 Author's PyTorch implementation of [Reinforced Imitative Trajectory Planning for Urban Automated Driving](http://arxiv.org/abs/2410.15607).
 
 ## Getting Started
 
 ### 1. Installation
 
-**Tested environment:** Python 3.11, CUDA 12.4, PyTorch 2.5.1, pytorch-lightning 1.3.8
+**Tested environment:** NVIDIA B200, Python 3.11, CUDA 12.4, PyTorch 2.5.1, pytorch-lightning 1.3.8
 
 #### 1.1 Clone repositories
 
