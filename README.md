@@ -5,40 +5,81 @@ Author's PyTorch implementation of [Reinforced Imitative Trajectory Planning for
 
 ### 1. Installation
 
-- Setup the nuPlan devkit and dataset following the [nuPlan user guide](https://github.com/motional/nuplan-devkit?tab=readme-ov-file).
+**Tested environment:** Python 3.11, CUDA 12.4, PyTorch 2.5.1, pytorch-lightning 1.3.8
 
-- If you encounter package incompatibility issues when installing the nuPlan devkit, replace the `~/nuplan-devkit/requirements.txt` and `~/nuplan-devkit/requirements_torch.txt` files with the `~/nuplan_zigned/nuplan_requirements/requirements.txt` and `~/nuplan_zigned/nuplan_requirements/requirements_torch.txt` files after cloning this repository.
-
-- Clone this repository:
+#### 1.1 Clone repositories
 
 ```bash
-git clone https://github.com/Zigned/nuplan_zigned.git && cd nuplan_zigned
+git clone https://github.com/motional/nuplan-devkit.git
+git clone https://github.com/Zigned/nuplan_zigned.git
 ```
 
-
-
-- Make sure the environment you created when installing the nuPlan devkit is activated:
+#### 1.2 Create conda environment
 
 ```bash
-conda activate nuplan
+conda create -n nuplan_ritp python=3.11 -y
+conda activate nuplan_ritp
 ```
 
-- Install dependencies for nuplan_zigned:
+#### 1.3 Install nuplan-devkit as editable
+
+Install the devkit in editable mode so that Hydra config files (yaml) are accessible at runtime:
 
 ```bash
-pip install -r requirements.txt
+pip install -e ./nuplan-devkit --no-deps
 ```
 
+> **Note:** Do **not** use a regular `pip install` for nuplan-devkit — the yaml config files are not included in the built package and Hydra will fail to find them.
+
+#### 1.4 Install PyTorch and PyG dependencies
+
 ```bash
-pip install -r requirements_torch.txt
+pip install -r nuplan_zigned/requirements_torch.txt
 ```
 
-
-
-- Install the local nuplan_zigned as a pip package:
+#### 1.5 Install nuplan_zigned dependencies
 
 ```bash
-pip install -e .
+pip install -r nuplan_zigned/requirements.txt
+```
+
+#### 1.6 Install nuplan_zigned as editable
+
+```bash
+cd nuplan_zigned && pip install -e .
+```
+
+#### 1.7 Configure data paths in training scripts
+
+Before running any training or caching script, open the script (e.g. `scripts/training/train_ritp_planner.py`) and set the following variables to match your machine:
+
+```python
+# Root directory containing nuplan-maps-v1.0/ and data/
+NUPLAN_ROOT = '/path/to/your/nuplan/data'
+
+# Parent directories of .db split folders
+NUPLAN_DB_ROOT = '/path/to/your/nuplan/data/cache'
+
+# Output directory for experiments and cache
+SAVE_DIR = '/path/to/your/experiments/ritp_planner'
+
+# (Optional) Pretrained model checkpoints — skipped automatically if files don't exist
+QCMAE_DIR = '/path/to/qcmae.ckpt'
+REWARDFORMER_DIR = '/path/to/rewardformer.ckpt'
+U_R_STATS_DIR = '/path/to/u_r_stats.npy'
+```
+
+Expected data directory structure:
+
+```
+NUPLAN_ROOT/
+├── nuplan-maps-v1.0/       # map files
+└── data/
+    └── cache/
+        ├── train_boston/   # *.db files
+        ├── train_pittsburgh/
+        ├── train_singapore/
+        └── val/
 ```
 
 
