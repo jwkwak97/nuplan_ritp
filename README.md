@@ -1,4 +1,4 @@
-# nuplan_zigned (RITP · NVIDIA B200 Adaptation)
+# nuplan-ritp (RITP · NVIDIA B200 Adaptation)
 
 > **This repository is a fork of [Zigned/nuplan_zigned](https://github.com/Zigned/nuplan_zigned)**, adapted to run on **NVIDIA B200 GPUs** with an updated software stack (CUDA 12.4, PyTorch 2.5.1). The original code targets older hardware and package versions; this fork applies the following changes:
 >
