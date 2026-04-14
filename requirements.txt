@@ -1,7 +1,12 @@
-nuplan-devkit==1.2.2
+# nuplan-devkit must be installed separately as editable from local workspace:
+#   pip install -e /path/to/nuplan-devkit --no-deps
+# nuplan-devkit==1.2.2
+
 pillow==9.5.0
-cvxopt==1.2.6
+cvxopt==1.3.3
 fairscale==0.4.13
 h5py==3.8.0
-natten==0.14.6
 numba==0.60.0
+pytorch-lightning==1.3.8
+torchmetrics==0.4.1
+pyDeprecate==0.3.0

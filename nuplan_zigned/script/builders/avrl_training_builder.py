@@ -110,7 +110,7 @@ def build_trainer(cfg: DictConfig) -> pl.Trainer:
     callbacks = build_callbacks(cfg)
 
     plugins = [
-        pl.plugins.DDPPlugin(find_unused_parameters=False, num_nodes=params.num_nodes),
+        pl.plugins.DDPPlugin(find_unused_parameters=False),
     ]
 
     if 'estimate_u_r_stats' in cfg.experiment:

@@ -1,21 +1,35 @@
 import os
+import getpass
 import hydra
 
 from nuplan_zigned.script.ritp_run_training import main as main_train
 
-USER_NAME = os.getlogin()
-os.chdir(f'/home/{USER_NAME}/nuplan_zigned/scripts/training')  # set working directory
-os.environ['NUPLAN_DATA_ROOT'] = f'/home/{USER_NAME}/nuplan/dataset'
-os.environ['NUPLAN_MAPS_ROOT'] = f'/home/{USER_NAME}/nuplan/dataset/maps'
-os.environ['NUPLAN_DB_FILES'] = f'/home/{USER_NAME}/nuplan/dataset/nuplan-v1.1/splits/mini'
+USER_NAME = getpass.getuser()
+
+# Use the script's actual location as working directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(SCRIPT_DIR)  # set working directory
+
+# nuplan dataset paths (actual locations on this machine)
+NUPLAN_ROOT = '/home/jovyan/aitc-plan-team-1'
+os.environ['NUPLAN_DATA_ROOT'] = NUPLAN_ROOT
+os.environ['NUPLAN_MAPS_ROOT'] = NUPLAN_ROOT
 os.environ['NUPLAN_MAP_VERSION'] = 'nuplan-maps-v1.0'
+
+# nuplan DB files: each split subdirectory has .db files directly inside
+NUPLAN_DB_ROOT = os.path.join(NUPLAN_ROOT, 'data', 'cache')
+NUPLAN_DB_DIRS = [
+    os.path.join(NUPLAN_DB_ROOT, split)
+    for split in ['train_boston', 'train_pittsburgh', 'train_singapore', 'val']
+    if os.path.isdir(os.path.join(NUPLAN_DB_ROOT, split))
+]
 
 # If set, use the env. variable to overwrite the Hydra config
 CONFIG_PATH = '../../../nuplan-devkit/nuplan/planning/script/config/training'
 CONFIG_NAME = 'default_training'
 
 # Create a directory to store the cache and experiment artifacts
-SAVE_DIR = f'/home/{USER_NAME}/nuplan/exp/ritp_planner'  # optionally replace with persistent dir
+SAVE_DIR = f'/home/{USER_NAME}/workspace/nuplan_zigned/experiments/ritp_planner'
 EXPERIMENT = 'training_ritp_planner_experiment'
 PYFUNC = 'cache'  # TODO uncomment in feature caching stage
 # PYFUNC = 'train'  # TODO uncomment in training stage
@@ -25,17 +39,17 @@ else:
     JOB_NAME = 'train_motionformer'
 LOG_DIR = os.path.join(SAVE_DIR, EXPERIMENT, JOB_NAME)
 
-# model dir
-QCMAE_DIR = f'/home/{USER_NAME}/nuplan/exp/qcmae/training_qcmae_experiment/finetune_qcmae_with_sd/2024.04.26.10.35.16/best_model/epoch\=58-step\=88971.ckpt'  # TODO finetuned QCMAE model direction
-REWARDFORMER_DIR = f'/home/{USER_NAME}/nuplan/exp/avrl/training_avrl_experiment/train_avrl_vector/2024.12.18.12.08.45/best_model/epoch\=8-step\=54287.ckpt'  # TODO trained RewardFormer
+# model checkpoint dirs — only pass if the files actually exist
+QCMAE_DIR = f'/home/{USER_NAME}/nuplan/exp/qcmae/training_qcmae_experiment/finetune_qcmae_with_sd/2024.04.26.10.35.16/best_model/epoch=58-step=88971.ckpt'  # TODO finetuned QCMAE model direction
+REWARDFORMER_DIR = f'/home/{USER_NAME}/nuplan/exp/avrl/training_avrl_experiment/train_avrl_vector/2024.12.18.12.08.45/best_model/epoch=8-step=54287.ckpt'  # TODO trained RewardFormer
 U_R_STATS_DIR = f'/home/{USER_NAME}/nuplan/exp/avrl/training_avrl_experiment/train_avrl_vector/2024.12.18.12.08.45/best_model/u_r_stats.npy'  # TODO stats of the trained RewardFormer
 
 # Initialize configuration management system
 hydra.core.global_hydra.GlobalHydra.instance().clear()
 hydra.initialize(config_path=CONFIG_PATH)
 
-# Compose the configuration
-cfg = hydra.compose(config_name=CONFIG_NAME, overrides=[
+# Build overrides list
+overrides = [
     f'group={SAVE_DIR}',
     f'cache.cache_path={SAVE_DIR}/cache_vector',
     f'experiment_name={EXPERIMENT}',
@@ -43,6 +57,7 @@ cfg = hydra.compose(config_name=CONFIG_NAME, overrides=[
     f'py_func={PYFUNC}',
     '+training=training_ritp_planner',
     'scenario_builder=nuplan_mini',  # use nuplan mini database
+    f'scenario_builder.db_files=[{",".join(NUPLAN_DB_DIRS)}]',  # list of split dirs containing .db files
     'scenario_filter=mini_split',
     'scenario_filter.limit_total_scenarios=10000',  # Choose 10000 scenarios to train with
     'lightning.trainer.checkpoint.monitor=metrics/val_minFDE',
@@ -67,11 +82,19 @@ cfg = hydra.compose(config_name=CONFIG_NAME, overrides=[
     'optimizer=adamw',
     'optimizer.lr=5e-5',  # for batch_size 1. lr_scheduler.max_lr is set to optimizer.lr by default.
     'optimizer.weight_decay=1e-4',
-    f'model.qcmae_model_params.pretrained_model_dir={QCMAE_DIR}',
-    f'model.rewardformer_model_params.model_dir={REWARDFORMER_DIR}',
-    f'model.rewardformer_model_params.u_r_stats_dir={U_R_STATS_DIR}',
     'hydra.searchpath=["pkg://nuplan.planning.script.config.common", "pkg://nuplan.planning.script.config.simulation", "pkg://nuplan_zigned.config", "pkg://nuplan_zigned.config/common", "pkg://nuplan_zigned.config.training"]',
-])
+]
+
+# Only pass model checkpoint paths if the files actually exist
+if os.path.isfile(QCMAE_DIR):
+    overrides.append(f'model.qcmae_model_params.pretrained_model_dir={QCMAE_DIR}')
+if os.path.isfile(REWARDFORMER_DIR):
+    overrides.append(f'model.rewardformer_model_params.model_dir={REWARDFORMER_DIR}')
+if os.path.isfile(U_R_STATS_DIR):
+    overrides.append(f'model.rewardformer_model_params.u_r_stats_dir={U_R_STATS_DIR}')
+
+# Compose the configuration
+cfg = hydra.compose(config_name=CONFIG_NAME, overrides=overrides)
 
 
 if __name__ == '__main__':

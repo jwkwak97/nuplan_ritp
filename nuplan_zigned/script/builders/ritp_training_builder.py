@@ -120,9 +120,7 @@ def build_trainer(cfg: DictConfig) -> pl.Trainer:
     callbacks = build_callbacks(cfg)
 
     # TODO there are unsued parameters, so set find_unused_parameters=True. However this hits performance.
-    plugins = [
-        pl.plugins.DDPPlugin(find_unused_parameters=True, num_nodes=params.num_nodes),
-    ]
+    strategy = pl.plugins.DDPPlugin(find_unused_parameters=True)
 
     loggers = [
         pl.loggers.TensorBoardLogger(
@@ -140,7 +138,7 @@ def build_trainer(cfg: DictConfig) -> pl.Trainer:
         params.check_val_every_n_epoch = params.max_epochs + 1
         OmegaConf.set_struct(cfg, True)
 
-        return pl.Trainer(plugins=plugins, **params)
+        return pl.Trainer(plugins=[strategy], **params)
 
     if cfg.lightning.trainer.checkpoint.resume_training:
         # Resume training from latest checkpoint
@@ -164,7 +162,7 @@ def build_trainer(cfg: DictConfig) -> pl.Trainer:
 
     trainer = Trainer(
         callbacks=callbacks,
-        plugins=plugins,
+        plugins=[strategy],
         logger=loggers,
         replay_buffer=ReplayBuffer(max_size=int(cfg.utils.replay_buffer.max_size),
                                    batch_size=int(cfg.utils.replay_buffer.batch_size),

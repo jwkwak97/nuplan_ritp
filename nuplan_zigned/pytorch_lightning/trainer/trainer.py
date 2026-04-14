@@ -78,11 +78,6 @@ from nuplan_zigned.utils.replay_buffer import ReplayBuffer
 from nuplan_zigned.utils.env import Env
 
 log = logging.getLogger(__name__)
-# warnings to ignore in trainer
-warnings.filterwarnings(
-    'ignore', message='torch.distributed.reduce_op is deprecated, '
-    'please use torch.distributed.ReduceOp instead'
-)
 
 
 class Trainer(
